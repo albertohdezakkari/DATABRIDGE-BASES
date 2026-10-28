@@ -1,0 +1,33 @@
+name: Proyectos base C03
+on:
+  push:
+    branches: [main]
+    paths: ['**', '.github/workflows/bases.yml']
+  pull_request:
+    paths: ['**', '.github/workflows/bases.yml']
+  workflow_dispatch:
+jobs:
+  base:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        caso: ['01', '02', '03', '04', '05', '06']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            caso-${{ matrix.caso }}/backend/package-lock.json
+            caso-${{ matrix.caso }}/frontend/package-lock.json
+      - name: Verificar que se distribuye solo la base
+        run: node comprobar-bases.mjs ${{ matrix.caso }}
+      - name: Comprobar proyectos base
+        run: |
+          npm ci --prefix caso-${{ matrix.caso }}/backend --no-audit --no-fund
+          npm run build --prefix caso-${{ matrix.caso }}/backend
+          npm ci --prefix caso-${{ matrix.caso }}/frontend --no-audit --no-fund
+          cd caso-${{ matrix.caso }}/frontend
+          ./node_modules/.bin/tsc --noEmit
